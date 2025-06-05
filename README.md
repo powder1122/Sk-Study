@@ -6,3 +6,5 @@ Hello!
 
 #Branch
 branch pull requests test
+
+pr template example
