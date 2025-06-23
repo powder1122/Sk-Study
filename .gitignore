@@ -11,3 +11,4 @@ _pycache_/
 *.xlsx
 *.exe
 *.pyc 
+data_set/
