@@ -6,3 +6,8 @@ _pycache_/
 *.csv
 *.txt
 *.db
+*.json
+*.xls
+*.xlsx
+*.exe
+*.pyc 
