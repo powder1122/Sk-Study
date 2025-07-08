@@ -1,5 +1,4 @@
 .venv
-
 _pycache_/
 /_pycache_/
 *.log
@@ -11,4 +10,8 @@ _pycache_/
 *.xlsx
 *.exe
 *.pyc 
+*.jpg
+*.png
+*.gif
+*.jpeg
 data_set/
